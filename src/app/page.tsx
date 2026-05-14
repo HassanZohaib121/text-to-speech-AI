@@ -1,7 +1,13 @@
 "use client";
 
-import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { ModeToggle } from "@/components/ModeToggle";
 
 type AudioEntry = {
   filepath: string;
@@ -11,7 +17,7 @@ type AudioEntry = {
 
 export default function SupertonicPage() {
   const [text, setText] = useState("");
-  const [voiceStyle, setVoiceStyle] = useState("assets/voice_styles/M1.json");
+  const [voiceStyle, setVoiceStyle] = useState("M1");
   const [lang, setLang] = useState("en");
   const [totalStep, setTotalStep] = useState(8);
   const [speed, setSpeed] = useState(1.05);
@@ -19,6 +25,11 @@ export default function SupertonicPage() {
   const [loading, setLoading] = useState(false);
   const [audioEntries, setAudioEntries] = useState<AudioEntry[]>([]);
   const [loadingAudios, setLoadingAudios] = useState<Set<string>>(new Set());
+  const [showFilenameModal, setShowFilenameModal] = useState(false);
+  const [tempFilename, setTempFilename] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedAudio, setSelectedAudio] = useState<AudioEntry | null>(null);
+  const [filesDrawerOpen, setFilesDrawerOpen] = useState(false);
   const blobUrlsRef = useRef<string[]>([]);
 
   // Convert base64 WAV bytes → blob URL
@@ -90,13 +101,6 @@ export default function SupertonicPage() {
     }
   }, []);
 
-  // Cleanup blob URLs on unmount
-  // useEffect(() => {
-  //   return () => {
-  //     blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-  //   };
-  // }, []);
-
   useEffect(() => {
     const urls = blobUrlsRef.current;
     return () => {
@@ -111,6 +115,11 @@ export default function SupertonicPage() {
     init();
   }, [loadAudios]);
 
+  function openFilenameModal() {
+    setTempFilename(output || "output");
+    setShowFilenameModal(true);
+  }
+
   async function generateSpeech() {
     try {
       setLoading(true);
@@ -119,7 +128,7 @@ export default function SupertonicPage() {
         filename: output,
         text,
         lang,
-        voiceStyle,
+        voiceStyle: `assets/voice_styles/${voiceStyle}.json`,
         totalStep,
         speed,
       });
@@ -132,201 +141,269 @@ export default function SupertonicPage() {
     }
   }
 
+  async function handleConfirmFilename() {
+    setOutput(tempFilename);
+    setShowFilenameModal(false);
+    await generateSpeech();
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold">🎤 Text To Speech</h1>
-          <p className="text-slate-400 mt-2">
-            31-language Text-to-Speech with ONNX Runtime Web
-          </p>
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <div className="flex-1 flex flex-col p-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between bg-card p-6 rounded-3xl border border-border">
+          <h1 className="text-3xl font-bold">Text To Speech</h1>
+          <ModeToggle />
         </div>
 
-        {/* STATUS */}
-        {/* <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4">
-          <div>
-            <p className="font-medium">ℹ️ Loading models...</p>
-            <p className="text-sm text-slate-400">Please wait...</p>
-          </div>
-          <div className="rounded-full bg-blue-500/20 px-4 py-1 text-sm text-blue-400 border border-blue-500/30">
-            WebAssembly
-          </div>
-        </div> */}
-
-        {/* MAIN */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* LEFT PANEL */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            {/* Output filename */}
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-medium">Output Filename</label>
-                <span className="text-xs text-slate-400">Optional</span>
-              </div>
-              <input
-                type="text"
-                value={output}
-                onChange={(e) => setOutput(e.target.value)}
-                placeholder="Enter output filename (default: output)"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
-              />
-            </div>
-
-            {/* Voice style */}
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-medium">Voice Style</label>
-                <span className="text-xs text-slate-400">Ready</span>
-              </div>
-              <select
-                value={voiceStyle}
-                onChange={(e) => setVoiceStyle(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
-              >
-                <option value="assets/voice_styles/M1.json">Male 1 (M1)</option>
-                <option value="assets/voice_styles/M2.json">Male 2 (M2)</option>
-                <option value="assets/voice_styles/M3.json">Male 3 (M3)</option>
-                <option value="assets/voice_styles/M4.json">Male 4 (M4)</option>
-                <option value="assets/voice_styles/M5.json">Male 5 (M5)</option>
-                <option value="assets/voice_styles/F1.json">
-                  Female 1 (F1)
-                </option>
-                <option value="assets/voice_styles/F2.json">
-                  Female 2 (F2)
-                </option>
-                <option value="assets/voice_styles/F3.json">
-                  Female 3 (F3)
-                </option>
-                <option value="assets/voice_styles/F4.json">
-                  Female 4 (F4)
-                </option>
-                <option value="assets/voice_styles/F5.json">
-                  Female 5 (F5)
-                </option>
-              </select>
-            </div>
-
-            {/* Language */}
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium">Language</label>
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
-              >
-                <option value="en">English (en)</option>
-                <option value="ko">한국어 (ko)</option>
-                <option value="ja">日本語 (ja)</option>
-                <option value="ar">العربية (ar)</option>
-                <option value="de">Deutsch (de)</option>
-                <option value="es">Español (es)</option>
-                <option value="fr">Français (fr)</option>
-                <option value="hi">Hindi (hi)</option>
-                <option value="it">Italian (it)</option>
-                <option value="ru">Russian (ru)</option>
-                <option value="tr">Turkish (tr)</option>
-                <option value="uk">Ukrainian (uk)</option>
-              </select>
-            </div>
-
-            {/* Text */}
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium">
-                Text to Synthesize
-              </label>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Enter text..."
-                className="min-h-55 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none resize-none"
-              />
-            </div>
-
-            {/* Params */}
-            <div className="mb-6 grid grid-cols-2 gap-4">
+        {/* Main Grid */}
+        <div className="flex-1 flex">
+          {/* Left Panel - Input Controls */}
+          <div className="flex-1 rounded-3xl border border-border bg-card p-8 flex flex-col">
+            {/* Voice style and Language - Same Row */}
+            <div className="mb-4 grid grid-cols-4 gap-3">
               <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Total Steps
-                </label>
-                <input
+                <Label htmlFor="voice" className="text-xs font-medium">
+                  Voice
+                </Label>
+                <select
+                  id="voice"
+                  value={voiceStyle}
+                  onChange={(e) => setVoiceStyle(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  <option value="M1">M1</option>
+                  <option value="M2">M2</option>
+                  <option value="M3">M3</option>
+                  <option value="M4">M4</option>
+                  <option value="M5">M5</option>
+                  <option value="F1">F1</option>
+                  <option value="F2">F2</option>
+                  <option value="F3">F3</option>
+                  <option value="F4">F4</option>
+                  <option value="F5">F5</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="language" className="text-xs font-medium">
+                  Language
+                </Label>
+                <select
+                  id="language"
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  <option value="en">EN</option>
+                  <option value="ko">KO</option>
+                  <option value="ja">JA</option>
+                  <option value="ar">AR</option>
+                  <option value="de">DE</option>
+                  <option value="es">ES</option>
+                  <option value="fr">FR</option>
+                  <option value="hi">HI</option>
+                  <option value="it">IT</option>
+                  <option value="ru">RU</option>
+                  <option value="tr">TR</option>
+                  <option value="uk">UK</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="steps" className="text-xs font-medium">
+                  Steps
+                </Label>
+                <Input
+                  id="steps"
                   type="number"
                   value={totalStep}
                   min={1}
                   max={50}
                   onChange={(e) => setTotalStep(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
+                  className="rounded-lg border-slate-700 px-3 py-2 text-xs text-foreground"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium">Speed</label>
-                <input
+                <Label htmlFor="speed" className="text-xs font-medium">
+                  Speed
+                </Label>
+                <Input
+                  id="speed"
                   type="number"
                   value={speed}
                   min={0.5}
                   max={2}
                   step={0.05}
                   onChange={(e) => setSpeed(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
+                  className="rounded-lg border-slate-700px-3 py-2 text-xs text-foreground"
                 />
               </div>
             </div>
 
-            {/* Generate button */}
-            <button
-              onClick={generateSpeech}
-              disabled={loading}
-              className="w-full rounded-2xl bg-blue-600 px-6 py-4 font-medium transition hover:bg-blue-500 disabled:opacity-50"
-            >
-              {loading ? "Generating..." : "Generate Speech"}
-            </button>
-          </div>
+            {/* Text */}
+            <div className="mb-4 flex-1 flex flex-col">
+              <Label htmlFor="text" className="mb-2 block text-sm font-medium">
+                Text to Synthesize
+              </Label>
+              <Textarea
+                id="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter text..."
+                className="flex-1 rounded-2xl border-border bg-input text-foreground placeholder:text-muted-foreground resize-none"
+              />
+            </div>
 
-          {/* RIGHT PANEL */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <div className="mb-4 text-lg font-semibold">
-              Generated Audio Files
+            {/* Generate and View Files buttons */}
+            <div className="grid grid-cols-2 gap-3 mt-auto">
+              <Button
+                onClick={openFilenameModal}
+                disabled={loading || text.trim() === ""}
+                className="rounded-2xl bg-primary px-6 py-4 h-auto font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? "Generating..." : "Generate"}
+              </Button>
+              <Button
+                onClick={() => setFilesDrawerOpen(true)}
+                className="rounded-2xl bg-secondary px-6 py-4 h-auto font-medium text-secondary-foreground hover:bg-secondary/90 transition-colors"
+              >
+                Files ({audioEntries.length})
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filename Modal */}
+      {showFilenameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-2xl border border-border bg-card p-6 w-96 shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Enter Filename</h2>
+            <Input
+              type="text"
+              value={tempFilename}
+              onChange={(e) => setTempFilename(e.target.value)}
+              placeholder="Enter filename..."
+              className="rounded-lg border-border bg-input text-foreground placeholder:text-muted-foreground mb-6"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowFilenameModal(false)}
+                variant="outline"
+                className="flex-1 rounded-lg border-border text-foreground hover:bg-secondary/10"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmFilename}
+                disabled={loading || !tempFilename.trim()}
+                className="flex-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {loading ? "Generating..." : "Generate"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Audio Files Drawer */}
+      {filesDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setFilesDrawerOpen(false)}
+          />
+          <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Generated Audio Files</h2>
+              <button
+                onClick={() => setFilesDrawerOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={24} />
+              </button>
             </div>
 
             {audioEntries.length === 0 ? (
-              <div className="flex h-80 items-center justify-center rounded-2xl border border-dashed border-slate-700">
-                <p className="text-slate-400">No audio files yet</p>
+              <div className="flex items-center justify-center rounded-2xl border border-dashed border-border py-12 flex-1">
+                <p className="text-muted-foreground text-center">
+                  No audio files yet
+                </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-150 overflow-y-auto">
+              <div className="space-y-3 overflow-y-auto flex-1">
                 {audioEntries.map((entry) => (
                   <div
                     key={entry.filepath}
-                    className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                    className="cursor-pointer rounded-xl border border-border bg-input p-4 hover:border-border hover:bg-secondary/20 transition-colors"
+                    onClick={() => {
+                      setSelectedAudio(entry);
+                      setDrawerOpen(true);
+                    }}
                   >
-                    <p className="mb-2 text-xs text-slate-400 truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {entry.label}
                     </p>
-
-                    {entry.blobUrl ? (
-                      // Blob URL ready → native audio player works perfectly
-                      <audio controls className="w-full">
-                        <source src={entry.blobUrl} type="audio/wav" />
-                      </audio>
-                    ) : loadingAudios.has(entry.filepath) ? (
-                      <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-                        <span className="animate-spin">⏳</span> Loading…
-                      </div>
-                    ) : (
-                      // Not yet loaded → lazy load on demand
-                      <button
-                        onClick={() => loadAudioFile(entry.filepath)}
-                        className="w-full rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-400 hover:bg-slate-800 transition"
-                      >
-                        ▶ Load &amp; Play
-                      </button>
-                    )}
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      Click to play
+                    </p>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Audio Player Drawer */}
+      {drawerOpen && selectedAudio && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Audio Player</h2>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4 truncate">
+              {selectedAudio.label}
+            </p>
+
+            {selectedAudio.blobUrl ? (
+              <audio controls className="w-full mb-4">
+                <source src={selectedAudio.blobUrl} type="audio/wav" />
+                Your browser does not support the audio element.
+              </audio>
+            ) : loadingAudios.has(selectedAudio.filepath) ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-4 justify-center">
+                <span className="animate-spin">⏳</span> Loading…
+              </div>
+            ) : (
+              <Button
+                onClick={() => loadAudioFile(selectedAudio.filepath)}
+                className="w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Load &amp; Play
+              </Button>
+            )}
+
+            <div className="mt-auto pt-6 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">Filename</p>
+              <p className="text-sm font-medium break-all">
+                {selectedAudio.label}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
