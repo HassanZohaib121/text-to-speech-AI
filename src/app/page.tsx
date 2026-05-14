@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
+import { Eye, Trash, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { ModeToggle } from "@/components/ModeToggle";
 
@@ -31,6 +31,7 @@ export default function SupertonicPage() {
   const [selectedAudio, setSelectedAudio] = useState<AudioEntry | null>(null);
   const [filesDrawerOpen, setFilesDrawerOpen] = useState(false);
   const blobUrlsRef = useRef<string[]>([]);
+  const [progress, setProgress] = useState(0);
 
   // Convert base64 WAV bytes → blob URL
   const base64ToBlobUrl = (base64: string): string => {
@@ -123,6 +124,18 @@ export default function SupertonicPage() {
   async function generateSpeech() {
     try {
       setLoading(true);
+      setProgress(0);
+
+      // Fake progress animation
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          // Stop at 95% until complete
+          if (prev >= 95) return prev;
+
+          return prev + 5;
+        });
+      }, 500);
+
       // const result =
       await invoke<string>("generate_tts", {
         output: "",
@@ -135,6 +148,14 @@ export default function SupertonicPage() {
       });
       // console.log("Generated:", result);
       await loadAudios();
+      clearInterval(interval);
+
+      setProgress(100);
+
+      setTimeout(() => {
+        // setText("");
+        setLoading(false);
+      }, 500);
     } catch (err) {
       console.error("generate_tts error:", err);
     } finally {
@@ -148,135 +169,160 @@ export default function SupertonicPage() {
     await generateSpeech();
   }
 
+  async function deleteFile(path: string) {
+    try {
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this audio file?",
+      );
+
+      if (!confirmDelete) return;
+      const res = await invoke("delete_audio_file", {
+        filepath: path,
+      });
+
+      console.log(res);
+      setAudioEntries((prev) => prev.filter((e) => e.filepath !== path));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  }
+
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      <div className="flex-1 flex flex-col p-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between bg-card p-6 rounded-3xl border border-border">
+        {/* <div className="mb-6 flex items-center justify-between bg-card p-6 rounded-3xl border border-border">
           <h1 className="text-3xl font-bold">Text To Speech</h1>
           <ModeToggle />
-        </div>
+        </div> */}
 
         {/* Main Grid */}
         <div className="flex-1 flex">
           {/* Left Panel - Input Controls */}
-          <div className="flex-1 rounded-3xl border border-border bg-card p-8 flex flex-col">
+          <div className="flex-1 bg-card p-8 flex flex-col">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-3xl font-bold">Text To Speech</h1>
+              <ModeToggle />
+            </div>
             {/* Voice style and Language - Same Row */}
-            <div className="mb-4 grid grid-cols-4 gap-3">
+            <div className="mb-4 grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="voice" className="text-xs font-medium">
-                  Voice
-                </Label>
-                <select
-                  id="voice"
-                  value={voiceStyle}
-                  onChange={(e) => setVoiceStyle(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {[
-                    { value: "M1", label: "Ethan" },
-                    { value: "M2", label: "Noah" },
-                    { value: "M3", label: "Liam" },
-                    { value: "M4", label: "Oliver" },
-                    { value: "M5", label: "Leo" },
-
-                    { value: "F1", label: "Ava" },
-                    { value: "F2", label: "Sophia" },
-                    { value: "F3", label: "Isabella" },
-                    { value: "F4", label: "Mia" },
-                    { value: "F5", label: "Aria" },
-                  ].map((voice) => (
-                    <option key={voice.value} value={voice.value}>
-                      {voice.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2 mb-4">
+                  <Label htmlFor="voice" className="text-xs font-medium">
+                    Voice
+                  </Label>
+                  <select
+                    id="voice"
+                    value={voiceStyle}
+                    onChange={(e) => setVoiceStyle(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    {[
+                      { value: "M1", label: "Ethan" },
+                      { value: "M2", label: "Noah" },
+                      { value: "M3", label: "Liam" },
+                      { value: "M4", label: "Oliver" },
+                      { value: "M5", label: "Leo" },
+                      { value: "F1", label: "Ava" },
+                      { value: "F2", label: "Sophia" },
+                      { value: "F3", label: "Isabella" },
+                      { value: "F4", label: "Mia" },
+                      { value: "F5", label: "Aria" },
+                    ].map((voice) => (
+                      <option key={voice.value} value={voice.value}>
+                        {voice.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <Label htmlFor="language" className="text-xs font-medium">
+                    Language
+                  </Label>
+                  <select
+                    id="language"
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    {[
+                      { code: "en", label: "English" },
+                      { code: "ko", label: "Korean" },
+                      { code: "ja", label: "Japanese" },
+                      { code: "ar", label: "Arabic" },
+                      { code: "bg", label: "Bulgarian" },
+                      { code: "cs", label: "Czech" },
+                      { code: "da", label: "Danish" },
+                      { code: "de", label: "German" },
+                      { code: "el", label: "Greek" },
+                      { code: "es", label: "Spanish" },
+                      { code: "et", label: "Estonian" },
+                      { code: "fi", label: "Finnish" },
+                      { code: "fr", label: "French" },
+                      { code: "hi", label: "Hindi" },
+                      { code: "hr", label: "Croatian" },
+                      { code: "hu", label: "Hungarian" },
+                      { code: "id", label: "Indonesian" },
+                      { code: "it", label: "Italian" },
+                      { code: "lt", label: "Lithuanian" },
+                      { code: "lv", label: "Latvian" },
+                      { code: "nl", label: "Dutch" },
+                      { code: "pl", label: "Polish" },
+                      { code: "pt", label: "Portuguese" },
+                      { code: "ro", label: "Romanian" },
+                      { code: "ru", label: "Russian" },
+                      { code: "sk", label: "Slovak" },
+                      { code: "sl", label: "Slovenian" },
+                      { code: "sv", label: "Swedish" },
+                      { code: "tr", label: "Turkish" },
+                      { code: "uk", label: "Ukrainian" },
+                      { code: "vi", label: "Vietnamese" },
+                    ].map((lang) => (
+                      <option key={lang.code} value={lang.code}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="language" className="text-xs font-medium">
-                  Language
-                </Label>
-                <select
-                  id="language"
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {[
-                    { code: "en", label: "English" },
-                    { code: "ko", label: "Korean" },
-                    { code: "ja", label: "Japanese" },
-                    { code: "ar", label: "Arabic" },
-                    { code: "bg", label: "Bulgarian" },
-                    { code: "cs", label: "Czech" },
-                    { code: "da", label: "Danish" },
-                    { code: "de", label: "German" },
-                    { code: "el", label: "Greek" },
-                    { code: "es", label: "Spanish" },
-                    { code: "et", label: "Estonian" },
-                    { code: "fi", label: "Finnish" },
-                    { code: "fr", label: "French" },
-                    { code: "hi", label: "Hindi" },
-                    { code: "hr", label: "Croatian" },
-                    { code: "hu", label: "Hungarian" },
-                    { code: "id", label: "Indonesian" },
-                    { code: "it", label: "Italian" },
-                    { code: "lt", label: "Lithuanian" },
-                    { code: "lv", label: "Latvian" },
-                    { code: "nl", label: "Dutch" },
-                    { code: "pl", label: "Polish" },
-                    { code: "pt", label: "Portuguese" },
-                    { code: "ro", label: "Romanian" },
-                    { code: "ru", label: "Russian" },
-                    { code: "sk", label: "Slovak" },
-                    { code: "sl", label: "Slovenian" },
-                    { code: "sv", label: "Swedish" },
-                    { code: "tr", label: "Turkish" },
-                    { code: "uk", label: "Ukrainian" },
-                    { code: "vi", label: "Vietnamese" },
-                  ].map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="steps" className="text-xs font-medium">
-                  Steps
-                </Label>
-                <Input
-                  id="steps"
-                  type="number"
-                  value={totalStep}
-                  min={1}
-                  max={50}
-                  onChange={(e) => setTotalStep(Number(e.target.value))}
-                  className="rounded-lg border-slate-700 px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
-                />
-              </div>
-              <div>
-                <Label htmlFor="speed" className="text-xs font-medium">
-                  Speed
-                </Label>
-                <Input
-                  id="speed"
-                  type="number"
-                  value={speed}
-                  min={0.5}
-                  max={2}
-                  step={0.05}
-                  onChange={(e) => setSpeed(Number(e.target.value))}
-                  className="rounded-lg border-slate-700px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
-                />
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-2 mb-4">
+                  <Label htmlFor="steps" className="text-xs font-medium">
+                    Steps ({totalStep})
+                  </Label>
+                  <Input
+                    id="steps"
+                    type="range"
+                    value={totalStep}
+                    min={1}
+                    max={50}
+                    onChange={(e) => setTotalStep(Number(e.target.value))}
+                    className="rounded-lg border-slate-700 px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
+                  />
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <Label htmlFor="speed" className="text-xs font-medium">
+                    Speed ({speed.toFixed(2)}x)
+                  </Label>
+                  <Input
+                    id="speed"
+                    type="range"
+                    value={speed}
+                    min={0.5}
+                    max={2}
+                    step={0.05}
+                    onChange={(e) => setSpeed(Number(e.target.value))}
+                    className="rounded-lg border-slate-700px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Text */}
             <div className="mb-4 flex-1 flex flex-col">
-              <Label htmlFor="text" className="mb-2 block text-sm font-medium">
+              {/* <Label htmlFor="text" className="mb-2 block text-sm font-medium">
                 Text to Synthesize
-              </Label>
+              </Label> */}
               <Textarea
                 id="text"
                 value={text}
@@ -285,6 +331,24 @@ export default function SupertonicPage() {
                 className="flex-1 rounded-2xl border-border bg-input text-foreground placeholder:text-muted-foreground resize-none"
               />
             </div>
+            {loading && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 cursor-wait">
+                <div className="w-[50%] rounded-3xl border border-border bg-card p-6 shadow-xl">
+                  <div className="mb-3 text-sm font-medium">
+                    Generating audio... {progress}%
+                  </div>
+
+                  <div className="h-4 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                      style={{
+                        width: `${progress}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Generate and View Files buttons */}
             <div className="grid grid-cols-2 gap-3 mt-auto">
@@ -368,18 +432,37 @@ export default function SupertonicPage() {
                 {audioEntries.map((entry) => (
                   <div
                     key={entry.filepath}
-                    className="cursor-pointer rounded-xl border border-border bg-input p-4 hover:border-border hover:bg-secondary/20 transition-colors"
-                    onClick={() => {
-                      setSelectedAudio(entry);
-                      setDrawerOpen(true);
-                    }}
+                    className="flex justify-between items-center cursor-pointer rounded-xl border border-border bg-input p-4 hover:border-border hover:bg-secondary/20 transition-colors"
                   >
-                    <p className="text-xs text-muted-foreground truncate">
-                      {entry.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      Click to play
-                    </p>
+                    <div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {entry.label}
+                      </p>
+                      {/* <p className="text-xs text-muted-foreground/70 mt-1">
+                        Click to play
+                      </p> */}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedAudio(entry);
+                          setDrawerOpen(true);
+                        }}
+                        className="text-muted-foreground hover:text-red-500 transition-colors"
+                      >
+                        <Eye color="blue" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteFile(entry.filepath)}
+                        className="text-muted-foreground hover:text-red-500 transition-colors"
+                      >
+                        <Trash color="red" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -181,6 +181,24 @@ fn list_audio_files() -> Result<Vec<String>, String> {
 }
 
 /// ----------------------------
+/// DELETE AUDIO FILE
+/// ----------------------------
+
+#[command]
+fn delete_audio_file(filepath: String) -> Result<String, String> {
+
+    let path = std::path::PathBuf::from(&filepath);
+
+    if !path.exists() {
+        return Err("File does not exist".to_string());
+    }
+
+    std::fs::remove_file(&path)
+        .map_err(|e| format!("Failed to delete file: {}", e))?;
+
+    Ok("File deleted successfully".to_string())
+}
+/// ----------------------------
 /// TAURI RUNNER
 /// ----------------------------
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -192,7 +210,8 @@ pub fn run() {
                 generate_tts,
                 save_audio,
                 load_audio,
-                list_audio_files
+                list_audio_files,
+                delete_audio_file
             ]
         )
         .plugin(
