@@ -68,7 +68,7 @@ export default function SupertonicPage() {
   const loadAudios = useCallback(async () => {
     try {
       const files = await invoke<string[]>("list_audio_files");
-      console.log("Audio files:", files);
+      // console.log("Audio files:", files);
       const reversed = [...files].reverse();
 
       // Build all entries without blob URLs first
@@ -123,7 +123,8 @@ export default function SupertonicPage() {
   async function generateSpeech() {
     try {
       setLoading(true);
-      const result = await invoke<string>("generate_tts", {
+      // const result =
+      await invoke<string>("generate_tts", {
         output: "",
         filename: output,
         text,
@@ -132,7 +133,7 @@ export default function SupertonicPage() {
         totalStep,
         speed,
       });
-      console.log("Generated:", result);
+      // console.log("Generated:", result);
       await loadAudios();
     } catch (err) {
       console.error("generate_tts error:", err);
@@ -170,18 +171,25 @@ export default function SupertonicPage() {
                   id="voice"
                   value={voiceStyle}
                   onChange={(e) => setVoiceStyle(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                  <option value="M1">M1</option>
-                  <option value="M2">M2</option>
-                  <option value="M3">M3</option>
-                  <option value="M4">M4</option>
-                  <option value="M5">M5</option>
-                  <option value="F1">F1</option>
-                  <option value="F2">F2</option>
-                  <option value="F3">F3</option>
-                  <option value="F4">F4</option>
-                  <option value="F5">F5</option>
+                  {[
+                    { value: "M1", label: "Ethan" },
+                    { value: "M2", label: "Noah" },
+                    { value: "M3", label: "Liam" },
+                    { value: "M4", label: "Oliver" },
+                    { value: "M5", label: "Leo" },
+
+                    { value: "F1", label: "Ava" },
+                    { value: "F2", label: "Sophia" },
+                    { value: "F3", label: "Isabella" },
+                    { value: "F4", label: "Mia" },
+                    { value: "F5", label: "Aria" },
+                  ].map((voice) => (
+                    <option key={voice.value} value={voice.value}>
+                      {voice.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -192,20 +200,45 @@ export default function SupertonicPage() {
                   id="language"
                   value={lang}
                   onChange={(e) => setLang(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-input dark:bg-background px-3 py-2 text-xs text-foreground outline-none hover:border-border focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                  <option value="en">EN</option>
-                  <option value="ko">KO</option>
-                  <option value="ja">JA</option>
-                  <option value="ar">AR</option>
-                  <option value="de">DE</option>
-                  <option value="es">ES</option>
-                  <option value="fr">FR</option>
-                  <option value="hi">HI</option>
-                  <option value="it">IT</option>
-                  <option value="ru">RU</option>
-                  <option value="tr">TR</option>
-                  <option value="uk">UK</option>
+                  {[
+                    { code: "en", label: "English" },
+                    { code: "ko", label: "Korean" },
+                    { code: "ja", label: "Japanese" },
+                    { code: "ar", label: "Arabic" },
+                    { code: "bg", label: "Bulgarian" },
+                    { code: "cs", label: "Czech" },
+                    { code: "da", label: "Danish" },
+                    { code: "de", label: "German" },
+                    { code: "el", label: "Greek" },
+                    { code: "es", label: "Spanish" },
+                    { code: "et", label: "Estonian" },
+                    { code: "fi", label: "Finnish" },
+                    { code: "fr", label: "French" },
+                    { code: "hi", label: "Hindi" },
+                    { code: "hr", label: "Croatian" },
+                    { code: "hu", label: "Hungarian" },
+                    { code: "id", label: "Indonesian" },
+                    { code: "it", label: "Italian" },
+                    { code: "lt", label: "Lithuanian" },
+                    { code: "lv", label: "Latvian" },
+                    { code: "nl", label: "Dutch" },
+                    { code: "pl", label: "Polish" },
+                    { code: "pt", label: "Portuguese" },
+                    { code: "ro", label: "Romanian" },
+                    { code: "ru", label: "Russian" },
+                    { code: "sk", label: "Slovak" },
+                    { code: "sl", label: "Slovenian" },
+                    { code: "sv", label: "Swedish" },
+                    { code: "tr", label: "Turkish" },
+                    { code: "uk", label: "Ukrainian" },
+                    { code: "vi", label: "Vietnamese" },
+                  ].map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -219,7 +252,7 @@ export default function SupertonicPage() {
                   min={1}
                   max={50}
                   onChange={(e) => setTotalStep(Number(e.target.value))}
-                  className="rounded-lg border-slate-700 px-3 py-2 text-xs text-foreground"
+                  className="rounded-lg border-slate-700 px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
                 />
               </div>
               <div>
@@ -234,7 +267,7 @@ export default function SupertonicPage() {
                   max={2}
                   step={0.05}
                   onChange={(e) => setSpeed(Number(e.target.value))}
-                  className="rounded-lg border-slate-700px-3 py-2 text-xs text-foreground"
+                  className="rounded-lg border-slate-700px-3 py-2 text-xs text-foreground bg-input dark:bg-background"
                 />
               </div>
             </div>
