@@ -126,31 +126,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
-name = "app"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "clap",
- "hound",
- "libc",
- "log",
- "ndarray",
- "ort",
- "rand",
- "rand_distr",
- "rayon",
- "regex",
- "rustfft",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "unicode-normalization",
-]
-
-[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4041,6 +4016,31 @@ checksum = "c4790fc369d5a530f4b544b094e31388b9b3a37c0f4652ade4505945f5660d24"
 dependencies = [
  "new_debug_unreachable",
  "utf-8",
+]
+
+[[package]]
+name = "text-to-speech"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "clap",
+ "hound",
+ "libc",
+ "log",
+ "ndarray",
+ "ort",
+ "rand",
+ "rand_distr",
+ "rayon",
+ "regex",
+ "rustfft",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "unicode-normalization",
 ]
 
 [[package]]

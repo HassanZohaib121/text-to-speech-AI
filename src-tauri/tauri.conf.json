@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "text-to-speech",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "com.text-to-speech.dev",
   "build": {
     "frontendDist": "../out",
@@ -31,7 +31,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "nsis",
     "resources": {
       "assets/": "./assets/"
     },
@@ -44,6 +44,11 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    },
+    "windows": {
+      "nsis": {
+        "compression": "lzma"
+      }
     }
   }
 }
