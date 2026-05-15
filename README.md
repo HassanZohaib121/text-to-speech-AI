@@ -139,8 +139,8 @@ Pick **one** installation method below.
 
 | Platform | Installer | Note |
 |----------|------------|------|
-| Windows | [MSI Installer](https://github.com/HassanZohaib121/text-to-speech-AI/releases/download/v0.1.0/text-to-speech_0.1.0_x64_en-US.msi) | SmartScreen may warn about an unknown app |
-| Windows | [EXE Installer](https://github.com/HassanZohaib121/text-to-speech-AI/releases/download/v0.1.0/text-to-speech_0.1.0_x64-setup.exe) | SmartScreen may warn about an unknown app |
+| Windows | [MSI Installer](https://github.com/HassanZohaib121/text-to-speech-AI/releases/download/v0.1.1/text-to-speech_0.1.1_x64_en-US.msi) | SmartScreen may warn about an unknown app |
+| Windows | [EXE Installer](https://github.com/HassanZohaib121/text-to-speech-AI/releases/download/v0.1.1/text-to-speech_0.1.1_x64-setup.exe) | SmartScreen may warn about an unknown app |
 
 Here is [V0.1.0](https://github.com/HassanZohaib121/text-to-speech-AI/releases/tag/v0.1.0)
 
