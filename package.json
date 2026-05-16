@@ -1,7 +1,8 @@
 {
   "name": "text-to-speech",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
+  "repository": "https://github.com/HassanZohaib121/text-to-speech-AI",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
